@@ -1,4 +1,7 @@
-﻿namespace Domain.Business
+﻿using Domain.Criptography;
+using Microsoft.AspNetCore.Http;
+
+namespace Domain.Business
 {
     public class Auction : Data
     {
@@ -8,7 +11,9 @@
             StartingValue = startingValue;
             MinBid = minBid;
             DueTime = DateTime.Now.Add(TimeSpan.FromMinutes(dueTime));
-            CurrentBid = new Bid(new Buyer("Starting Value", "None"), StartingValue);
+            CurrentBid = new Bid(new BuyerData("Starting Value", "None"), StartingValue);
+            Task.Run(BeginBroadcast);
+            Task.Run(BeginReceivingLoop);
         }
 
         public string ProdutctDescription { get; }
@@ -18,24 +23,40 @@
         public Bid CurrentBid { get; set; }
 
         private List<Bid> Bids { get; } = new();
-        private Dictionary<string, Buyer> Buyers { get; } = new();
-        private MultiCastGroup Group { get; } = new("224.5.6.7");
+        private Dictionary<string, BuyerData> Buyers { get; } = new();
+        public MultiCastGroup MultiCastGroup { get; } = new("224.9.9.9", 4960);
 
-        public string Join(string name, string publicKey)
+        public string GetConnectionData(string name, string publicKey)
         {
-            var data = Group.Join(publicKey);
-            Buyers.Add(publicKey, new Buyer(name, publicKey));
-            return data;
-        }
-        public string MakeBid(Bid newBid)
-        {
-            if (!newBid.IsValid(this))
-                return "Bid failed, the new bid needs to cover the current one...";
+            var encryptedData = Asymmetric.Encrypt(publicKey, MultiCastGroup.ConnectionData); ;
+            Buyers.Add(publicKey, new BuyerData(name, publicKey));
 
-            Bids.Add(newBid);
-            Group.Notify(newBid);
-            return "Bid Successfully placed!";
+            return encryptedData;
         }
+
+        private void BeginBroadcast()
+        {
+            while (true)
+            {
+                Console.WriteLine($"Current Bid is: {CurrentBid}");
+                MultiCastGroup.Notify(CurrentBid);
+                Thread.Sleep(500);
+            }
+        }
+        private void BeginReceivingLoop()
+        {
+            while (true)
+            {
+                var bid = MultiCastGroup.ReceiveBid();
+                if (!bid.IsValid(this))
+                    continue;
+
+                CurrentBid = bid;
+                MultiCastGroup.Notify(CurrentBid);
+                Thread.Sleep(500);
+            }
+        }
+
         public override string ToString()
         {
             return @$"

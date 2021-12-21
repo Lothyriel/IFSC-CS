@@ -1,8 +1,6 @@
-﻿using Domain.Business.Exceptions;
-using Newtonsoft.Json;
+﻿using Newtonsoft.Json;
 using System.Security.Cryptography;
 using System.Text;
-using System.Xml.Serialization;
 
 namespace Domain.Criptography
 {

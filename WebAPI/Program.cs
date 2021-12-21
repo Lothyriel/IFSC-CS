@@ -1,7 +1,6 @@
-using Domain;
-
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
@@ -13,8 +12,8 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-var auctionController = new AuctionController();
-app.MapPost("/start", auctionController.CreateAuction);
-app.MapPost("/join", auctionController.Join);
+app.UseAuthorization();
 
-app.Run("http://localhost:5212");
+app.MapControllers();
+
+app.Run();

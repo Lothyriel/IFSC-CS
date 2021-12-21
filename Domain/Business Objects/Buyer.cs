@@ -1,8 +1,8 @@
 ﻿namespace Domain.Business
 {
-    public class Buyer
+    public class BuyerData
     {
-        public Buyer(string name, string publicKey)
+        public BuyerData(string name, string publicKey)
         {
             Name = name;
             PublicKey = publicKey;

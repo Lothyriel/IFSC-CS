@@ -2,7 +2,7 @@
 {
     public class Bid : Data
     {
-        public Bid(Buyer buyer, double value)
+        public Bid(BuyerData buyer, double value)
         {
             Buyer = buyer;
             Value = value;
@@ -15,7 +15,10 @@
         {
             return $"Buyer: {Buyer} | Value: {Value}";
         }
-        public Buyer Buyer { get; }
+        public BuyerData Buyer { get; }
         public double Value { get; }
+
+        public const string InvalidMessage = "Bid failed, the new bid needs to cover the current one...";
+        public const string ValidMessage = "Bid Successfully placed!";
     }
 }

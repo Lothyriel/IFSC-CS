@@ -26,7 +26,7 @@ namespace Tests
         public void ShouldEncryptAndDecryptData()
         {
             //arrange
-            var buyer = new Buyer("João Xavier", "");
+            var buyer = new BuyerData("João Xavier", "");
             var bid = new Bid(buyer, 200);
 
             //act

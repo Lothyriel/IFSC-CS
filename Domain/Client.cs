@@ -8,40 +8,51 @@ namespace Domain
 {
     public class Client
     {
-        public string Name { get; }
-        public Socket? Socket { get; set; } = null;
-        private Asymmetric Asymmetric { get; } = new Asymmetric();
-        private Symmetric? Symmetric { get; set; } = null;
+        public BuyerData BuyerData { get; }
+
+        public UdpClient UDPClient { get; } = new UdpClient();
+        private Asymmetric AsymmetricKey { get; } = new Asymmetric();
+        public Symmetric? SymmetricKey { get; set; } = null;
 
         private static HttpClient HttpClient { get; } = new();
+        public Auction Auction => UpdateAuctionData();
 
         public Client(string name)
         {
-            Name = name;
+            BuyerData = new BuyerData(name, AsymmetricKey.SerializePublicKey());
         }
 
-        public async void Join()
+        public async Task RequestJoin()
         {
             var values = new Dictionary<string, string>
             {
-                { "name", "Name" },
-                { "publicKey", Asymmetric.SerializePublicKey() }
+                { "name", BuyerData.Name },
+                { "publicKey",BuyerData.PublicKey  }
             };
-
-            var content = new FormUrlEncodedContent(values);
-
-            var response = await HttpClient.PostAsync("http://localhost:5212", content);
+            var data = new FormUrlEncodedContent(values);
+            var response = await HttpClient.PostAsync("http://localhost:5009/join", data);
 
             TreatResponse(await response.Content.ReadAsStringAsync());
         }
-        public string Bid(Bid newBid)
+
+        public void MakeBid(Bid newBid)
         {
-            throw new NotImplementedException();
+            var encryptedBytes = SymmetricKey.Encrypt(newBid);
+            UDPClient.Send(encryptedBytes);
         }
 
-        public Data TreatData(byte[] data)
+        public Bid GetCurrentBid()
         {
-            return Symmetric?.Decrypt(data) ?? throw new NotConnected();
+            return Auction.CurrentBid;
+        }
+
+        private Auction UpdateAuctionData()
+        {
+            var ipep = new IPEndPoint(IPAddress.Any, 0);
+            var encryptedBytes = UDPClient.Receive(ref ipep);
+
+            var data = SymmetricKey?.Decrypt(encryptedBytes) ?? throw new NotConnected();
+            return (Auction)data;
         }
 
         private void TreatResponse(string responseData)
@@ -49,17 +60,15 @@ namespace Domain
             if (responseData.Contains("Auction"))
                 throw new AuctionNotStarted();
 
-            var connectionData = Asymmetric.Decrypt(responseData);
-
-            Symmetric = connectionData.Symmetric;
-            ConnectToMulticastGroup(connectionData.MultiCastAddress);
+            var connectionData = AsymmetricKey.Decrypt(responseData);
+            SymmetricKey = connectionData.SymmetricKey;
+            ConnectToMulticastGroup(connectionData.MultiCastAddress, connectionData.Port);
         }
 
-        private void ConnectToMulticastGroup(string multiCastAddress)
+        public void ConnectToMulticastGroup(string address, int port)
         {
-            Socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
-            Socket.SetSocketOption(SocketOptionLevel.IP, SocketOptionName.AddMembership, new MulticastOption(IPAddress.Parse(multiCastAddress)));
-            Socket.SetSocketOption(SocketOptionLevel.IP, SocketOptionName.MulticastTimeToLive, 2);
+            UDPClient.Connect(address, port);
+            UDPClient.JoinMulticastGroup(IPAddress.Parse(address), 2);
         }
     }
 }

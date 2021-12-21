@@ -6,7 +6,7 @@ namespace Domain.Business
     {
         public static NotStarted NotStarted { get; } = new NotStarted();
 
-        public static Data JsonDeserialize(string json) 
+        public static Data JsonDeserialize(string json)
         {
             try
             {

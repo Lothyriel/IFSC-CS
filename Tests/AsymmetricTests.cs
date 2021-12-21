@@ -8,10 +8,6 @@ namespace Tests
     {
         private Asymmetric AsymmetricKeys { get; } = new();
 
-        [SetUp]
-        public void Setup()
-        {
-        }
         [Test]
         public void ShouldLoadSameKey()
         {
@@ -28,16 +24,17 @@ namespace Tests
         {
             //arrange
             var strPublicKey = AsymmetricKeys.SerializePublicKey();
-            var connectionData = new ConnectionData("IP MULTICAST", new Symmetric());
+            var connectionData = new ConnectionData("IP MULTICAST", 42069, new Symmetric());
 
             //act
             var encryptedConnectionData = Asymmetric.Encrypt(strPublicKey, connectionData);
             var decryptedConnectionData = AsymmetricKeys.Decrypt(encryptedConnectionData);
 
             //assert            
-            decryptedConnectionData.Symmetric.Aes.Key.Should().Equal(connectionData.Symmetric.Aes.Key);
-            decryptedConnectionData.Symmetric.Aes.IV.Should().Equal(connectionData.Symmetric.Aes.IV);
+            decryptedConnectionData.SymmetricKey.Aes.Key.Should().Equal(connectionData.SymmetricKey.Aes.Key);
+            decryptedConnectionData.SymmetricKey.Aes.IV.Should().Equal(connectionData.SymmetricKey.Aes.IV);
             decryptedConnectionData.MultiCastAddress.Should().Be(connectionData.MultiCastAddress);
+            decryptedConnectionData.Port.Should().Be(connectionData.Port);
         }
     }
 }
