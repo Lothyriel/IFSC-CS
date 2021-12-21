@@ -13,7 +13,7 @@ namespace Domain.Business
             DueTime = DateTime.Now.Add(TimeSpan.FromMinutes(dueTime));
             CurrentBid = new Bid(new BuyerData("Starting Value", "None"), StartingValue);
             Task.Run(BeginBroadcast);
-            Task.Run(BeginReceivingLoop);
+            //Task.Run(BeginReceivingLoop); 
         }
 
         public string ProdutctDescription { get; }
@@ -24,7 +24,8 @@ namespace Domain.Business
 
         private List<Bid> Bids { get; } = new();
         private Dictionary<string, BuyerData> Buyers { get; } = new();
-        public MultiCastGroup MultiCastGroup { get; } = new("224.9.9.9", 4960);
+        public MultiCastGroup MultiCastGroup { get; } = new("224.168.55.25", 4567);
+        public static Auction? CurrentAuction { get; set; } = null;
 
         public string GetConnectionData(string name, string publicKey)
         {
@@ -39,7 +40,7 @@ namespace Domain.Business
             while (true)
             {
                 Console.WriteLine($"Current Bid is: {CurrentBid}");
-                MultiCastGroup.Notify(CurrentBid);
+                MultiCastGroup.Broadcast(CurrentBid);
                 Thread.Sleep(500);
             }
         }
@@ -52,8 +53,6 @@ namespace Domain.Business
                     continue;
 
                 CurrentBid = bid;
-                MultiCastGroup.Notify(CurrentBid);
-                Thread.Sleep(500);
             }
         }
 

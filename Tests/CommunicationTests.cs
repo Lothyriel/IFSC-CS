@@ -2,7 +2,6 @@
 using Domain.Business;
 using Domain.Business.Exceptions;
 using FluentAssertions;
-using Moq;
 using NUnit.Framework;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -33,6 +32,24 @@ namespace Tests
             //act
             var connectionData = auction.MultiCastGroup.ConnectionData;
             Client.ConnectToMulticastGroup(connectionData.MultiCastAddress, connectionData.Port);
+        }
+        [Test]
+        public void ShouldGetAuctionData()
+        {
+            //arrange 
+            var auction = new Auction("TV 50 Polegadas", 999.99, 10, 5);
+
+            //act
+            var connectionData = auction.MultiCastGroup.ConnectionData;
+            Client.SymmetricKey = connectionData.SymmetricKey;
+            Client.ConnectToMulticastGroup(connectionData.MultiCastAddress, connectionData.Port);
+
+            //assert
+            var clientInfo = Client.GetCurrentBid();
+
+            auction.CurrentBid.Value.Should().Be(clientInfo.Value);
+            auction.CurrentBid.Buyer.Name.Should().Be(clientInfo.Buyer.Name);
+            auction.CurrentBid.Buyer.PublicKey.Should().Be(clientInfo.Buyer.PublicKey);
         }
         [Test]
         public void ShouldUpdateBid()

@@ -1,6 +1,5 @@
 ﻿using Domain.Business;
 using Domain.Criptography;
-using Microsoft.AspNetCore.Http;
 using System.Net;
 using System.Net.Sockets;
 
@@ -16,26 +15,27 @@ namespace Domain
         public MultiCastGroup(string strIpAddress, int port)
         {
             var ipAddress = IPAddress.Parse(strIpAddress);
-            IPEP = new IPEndPoint(ipAddress, port);
+            IPEP = new(ipAddress, port);
 
-            ConnectionData = new ConnectionData(IPEP.Address.ToString(), IPEP.Port, SymmetricKey);
-            Socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+            ConnectionData = new(IPEP.Address.ToString(), IPEP.Port, SymmetricKey);
+            Socket = new(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
             Socket.SetSocketOption(SocketOptionLevel.IP, SocketOptionName.AddMembership, new MulticastOption(ipAddress));
-            Socket.SetSocketOption(SocketOptionLevel.IP, SocketOptionName.MulticastTimeToLive, 2);
+            Socket.SetSocketOption(SocketOptionLevel.IP, SocketOptionName.MulticastTimeToLive, 1);
 
             Socket.Connect(IPEP);
         }
-        public void Notify(Bid newBid)
+        public void Broadcast(Bid newBid)
         {
-            var bytes = SymmetricKey.Encrypt(newBid);
-            Socket.Send(bytes);
+            var encryptedBytes = SymmetricKey.Encrypt(newBid);
+            Socket.Send(encryptedBytes);
         }
-        public Bid ReceiveBid() 
+        public Bid ReceiveBid()
         {
             var buffer = new byte[4096];
-            var bytes = Socket.Receive(buffer);
+            var ep = (EndPoint)IPEP;
+            var qntBytes = Socket.ReceiveFrom(buffer, ref ep);
 
-            var data = SymmetricKey.Decrypt(buffer);
+            var data = SymmetricKey.Decrypt(buffer[0..qntBytes]);
 
             return (Bid)data;
         }

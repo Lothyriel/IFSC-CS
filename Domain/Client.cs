@@ -10,16 +10,17 @@ namespace Domain
     {
         public BuyerData BuyerData { get; }
 
-        public UdpClient UDPClient { get; } = new UdpClient();
-        private Asymmetric AsymmetricKey { get; } = new Asymmetric();
+        public Socket Socket { get; }
         public Symmetric? SymmetricKey { get; set; } = null;
+        public IPEndPoint MultiCastEP { get; private set; }
+        private Asymmetric AsymmetricKey { get; } = new();
 
         private static HttpClient HttpClient { get; } = new();
-        public Auction Auction => UpdateAuctionData();
 
         public Client(string name)
         {
-            BuyerData = new BuyerData(name, AsymmetricKey.SerializePublicKey());
+            Socket = new(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+            BuyerData = new(name, AsymmetricKey.SerializePublicKey());
         }
 
         public async Task RequestJoin()
@@ -34,27 +35,6 @@ namespace Domain
 
             TreatResponse(await response.Content.ReadAsStringAsync());
         }
-
-        public void MakeBid(Bid newBid)
-        {
-            var encryptedBytes = SymmetricKey.Encrypt(newBid);
-            UDPClient.Send(encryptedBytes);
-        }
-
-        public Bid GetCurrentBid()
-        {
-            return Auction.CurrentBid;
-        }
-
-        private Auction UpdateAuctionData()
-        {
-            var ipep = new IPEndPoint(IPAddress.Any, 0);
-            var encryptedBytes = UDPClient.Receive(ref ipep);
-
-            var data = SymmetricKey?.Decrypt(encryptedBytes) ?? throw new NotConnected();
-            return (Auction)data;
-        }
-
         private void TreatResponse(string responseData)
         {
             if (responseData.Contains("Auction"))
@@ -67,8 +47,26 @@ namespace Domain
 
         public void ConnectToMulticastGroup(string address, int port)
         {
-            UDPClient.Connect(address, port);
-            UDPClient.JoinMulticastGroup(IPAddress.Parse(address), 2);
+            var ipep = new IPEndPoint(IPAddress.Any, port);
+            var multiCastIP = IPAddress.Parse(address);
+            MultiCastEP = new IPEndPoint(multiCastIP, port);
+            Socket.Bind(ipep);
+            Socket.SetSocketOption(SocketOptionLevel.IP, SocketOptionName.AddMembership, new MulticastOption(multiCastIP, IPAddress.Any));
+        }
+
+        public void MakeBid(Bid newBid)
+        {
+            throw new Exception("udpclient???");
+            var encryptedBytes = SymmetricKey.Encrypt(newBid);
+            Socket.SendTo(encryptedBytes, MultiCastEP);
+        }
+        public Bid GetCurrentBid()
+        {
+            var buffer = new byte[4096];
+            var qtdBytes = Socket.Receive(buffer);
+
+            var data = SymmetricKey?.Decrypt(buffer[0..qtdBytes]) ?? throw new NotConnected();
+            return (Bid)data;
         }
     }
 }
