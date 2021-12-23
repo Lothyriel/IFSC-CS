@@ -1,9 +1,9 @@
-﻿using Domain.Criptography;
-using Microsoft.AspNetCore.Http;
+﻿using Domain.Business_Objects;
+using Domain.Criptography;
 
 namespace Domain.Business
 {
-    public class Auction : Data
+    public class Auction
     {
         public Auction(string produtctDescription, double startingValue, double minBid, double dueTime)
         {
@@ -12,8 +12,10 @@ namespace Domain.Business
             MinBid = minBid;
             DueTime = DateTime.Now.Add(TimeSpan.FromMinutes(dueTime));
             CurrentBid = new Bid(new BuyerData("Starting Value", "None"), StartingValue);
-            Task.Run(BeginBroadcast);
-            //Task.Run(BeginReceivingLoop); 
+            Connection = new(Data);
+
+            BeginReceivingLoop();
+            BeginBroadcast();
         }
 
         public string ProdutctDescription { get; }
@@ -21,15 +23,17 @@ namespace Domain.Business
         public double MinBid { get; }
         public DateTime DueTime { get; }
         public Bid CurrentBid { get; set; }
+        public AuctionConnection Connection { get; }
+
+        public ConnectionData Data = new("224.168.55.25", 50000, new());
 
         private List<Bid> Bids { get; } = new();
         private Dictionary<string, BuyerData> Buyers { get; } = new();
-        public MultiCastGroup MultiCastGroup { get; } = new("224.168.55.25", 4567);
         public static Auction? CurrentAuction { get; set; } = null;
 
         public string GetConnectionData(string name, string publicKey)
         {
-            var encryptedData = Asymmetric.Encrypt(publicKey, MultiCastGroup.ConnectionData); ;
+            var encryptedData = AsymmetricKey.Encrypt(publicKey, Connection.Data);
             Buyers.Add(publicKey, new BuyerData(name, publicKey));
 
             return encryptedData;
@@ -37,22 +41,33 @@ namespace Domain.Business
 
         private void BeginBroadcast()
         {
-            while (true)
+            Task.Run(Broadcast);
+
+            void Broadcast()
             {
-                Console.WriteLine($"Current Bid is: {CurrentBid}");
-                MultiCastGroup.Broadcast(CurrentBid);
-                Thread.Sleep(500);
+                while (true)
+                {
+                    Console.WriteLine($"Current Bid is: {CurrentBid}");
+                    Connection.Send(CurrentBid);
+                    Thread.Sleep(500);
+                }
             }
         }
         private void BeginReceivingLoop()
         {
-            while (true)
-            {
-                var bid = MultiCastGroup.ReceiveBid();
-                if (!bid.IsValid(this))
-                    continue;
+            Task.Run(ReceiveLoop);
 
-                CurrentBid = bid;
+            void ReceiveLoop()
+            {
+                while (true)
+                {
+                    var bid = Connection.Receive();
+                    if (!bid.IsValid(this) && bid.IsFromServer)
+                        continue;
+
+                    Bids.Add(bid);
+                    CurrentBid = bid;
+                }
             }
         }
 

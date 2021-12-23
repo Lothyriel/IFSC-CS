@@ -1,19 +1,20 @@
 ﻿using Domain.Business;
+using Domain.Business.Exceptions;
 using Newtonsoft.Json;
 using System.Security.Cryptography;
 using System.Text;
 
 namespace Domain.Criptography
 {
-    public class Symmetric
+    public class SymmetricKey
     {
-        public Symmetric()
+        public SymmetricKey()
         {
             Key = Encoding.Unicode.GetString(Aes.Key);
             IV = Encoding.Unicode.GetString(Aes.IV);
         }
         [JsonConstructor]
-        public Symmetric(string key, string iv)
+        public SymmetricKey(string key, string iv)
         {
             Aes.Key = Encoding.Unicode.GetBytes(key);
             Aes.IV = Encoding.Unicode.GetBytes(iv);
@@ -23,11 +24,11 @@ namespace Domain.Criptography
         public string? Key { get; }
         public string? IV { get; }
 
-        public byte[] Encrypt(Data data)
+        public byte[] Encrypt(Bid newBid)
         {
             var encryptor = Aes.CreateEncryptor(Aes.Key, Aes.IV);
 
-            var json = JsonConvert.SerializeObject(data);
+            var json = JsonConvert.SerializeObject(newBid);
             var bytes = Encoding.Unicode.GetBytes(json);
 
             using var memoryStream = new MemoryStream();
@@ -36,7 +37,7 @@ namespace Domain.Criptography
             cryptoStream.FlushFinalBlock();
             return memoryStream.ToArray();
         }
-        public Data Decrypt(byte[] encryptedBytes)
+        public Bid Decrypt(byte[] encryptedBytes)
         {
             var decryptor = Aes.CreateDecryptor(Aes.Key, Aes.IV);
 
@@ -45,7 +46,7 @@ namespace Domain.Criptography
             using var srDecrypt = new StreamReader(cryptoStream, Encoding.Unicode);
             var decryptedBytes = Encoding.Unicode.GetBytes(srDecrypt.ReadToEnd());
             var json = Encoding.Unicode.GetString(decryptedBytes);
-            return Data.JsonDeserialize(json);
+            return JsonConvert.DeserializeObject<Bid>(json)?? throw new InvalidData($"Error desserializing {json}");
         }
     }
 }

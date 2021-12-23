@@ -10,7 +10,7 @@ namespace WebAPI.Controllers
         [Route("join")]
         public string GetConnectionData(string name, string publicKey)
         {
-            return Auction.CurrentAuction?.GetConnectionData(name, publicKey) ?? NotStarted.Information;
+            return Auction.CurrentAuction?.GetConnectionData(name, publicKey) ?? "Not Started!";
         }
         [HttpPost()]
         [Route("start")]

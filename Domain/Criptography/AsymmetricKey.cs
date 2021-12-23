@@ -4,9 +4,9 @@ using System.Text;
 
 namespace Domain.Criptography
 {
-    public class Asymmetric
+    public class AsymmetricKey
     {
-        public Asymmetric()
+        public AsymmetricKey()
         {
             var rsa = new RSACryptoServiceProvider(2048);
             PrivateKey = rsa.ExportParameters(true);

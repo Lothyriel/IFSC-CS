@@ -1,11 +1,12 @@
 ﻿namespace Domain.Business
 {
-    public class Bid : Data
+    public class Bid
     {
-        public Bid(BuyerData buyer, double value)
+        public Bid(BuyerData buyer, double value, bool isFromServer = true)
         {
             Buyer = buyer;
             Value = value;
+            IsFromServer = isFromServer;
         }
         public bool IsValid(Auction auction)
         {
@@ -17,6 +18,8 @@
         }
         public BuyerData Buyer { get; }
         public double Value { get; }
+
+        public bool IsFromServer { get; }
 
         public const string InvalidMessage = "Bid failed, the new bid needs to cover the current one...";
         public const string ValidMessage = "Bid Successfully placed!";

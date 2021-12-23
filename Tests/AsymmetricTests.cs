@@ -6,14 +6,14 @@ namespace Tests
 {
     public class AsymmetricTests
     {
-        private Asymmetric AsymmetricKeys { get; } = new();
+        private AsymmetricKey AsymmetricKeys { get; } = new();
 
         [Test]
         public void ShouldLoadSameKey()
         {
             //act         
             var strPublicKey = AsymmetricKeys.SerializePublicKey();
-            var publicKey = Asymmetric.DesserializePublicKey(strPublicKey);
+            var publicKey = AsymmetricKey.DesserializePublicKey(strPublicKey);
 
             //assert
             publicKey.Modulus.Should().Equal(AsymmetricKeys.PublicKey.Modulus);
@@ -24,10 +24,10 @@ namespace Tests
         {
             //arrange
             var strPublicKey = AsymmetricKeys.SerializePublicKey();
-            var connectionData = new ConnectionData("IP MULTICAST", 42069, new Symmetric());
+            var connectionData = new ConnectionData("IP MULTICAST", 42069, new SymmetricKey());
 
             //act
-            var encryptedConnectionData = Asymmetric.Encrypt(strPublicKey, connectionData);
+            var encryptedConnectionData = AsymmetricKey.Encrypt(strPublicKey, connectionData);
             var decryptedConnectionData = AsymmetricKeys.Decrypt(encryptedConnectionData);
 
             //assert            
