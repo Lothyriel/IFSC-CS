@@ -1,4 +1,9 @@
-﻿using System.Text;
+﻿using Domain;
+using Domain.Business;
+using Newtonsoft.Json;
+using System.Collections.Generic;
+using System.Net.Http;
+using System.Text;
 
 namespace Tests
 {

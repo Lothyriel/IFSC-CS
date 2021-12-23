@@ -46,7 +46,7 @@ namespace Domain.Criptography
             using var srDecrypt = new StreamReader(cryptoStream, Encoding.Unicode);
             var decryptedBytes = Encoding.Unicode.GetBytes(srDecrypt.ReadToEnd());
             var json = Encoding.Unicode.GetString(decryptedBytes);
-            return JsonConvert.DeserializeObject<Bid>(json)?? throw new InvalidData($"Error desserializing {json}");
+            return JsonConvert.DeserializeObject<Bid>(json) ?? throw new InvalidData($"Error desserializing {json}");
         }
     }
 }

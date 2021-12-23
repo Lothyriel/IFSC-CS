@@ -2,19 +2,17 @@
 using Domain.Business;
 using Domain.Business.Exceptions;
 using FluentAssertions;
-using NUnit.Framework;
 using System.Threading;
 using System.Threading.Tasks;
-using WebAPI.Controllers;
+using Xunit;
 
 namespace Tests
 {
     public class CommunicationTests
     {
-        private ClientConnection Client { get; set; } = new("João Xavier");
-        private AuctionController Controller { get; set; } = new();
+        private Client Client { get; set; } = new("João Xavier");
 
-        [Test]
+        [Fact]
         public void ShouldThrowAuctionNotStarted()
         {
             //act
@@ -23,7 +21,7 @@ namespace Tests
             //assert
             act.Should().ThrowAsync<AuctionNotStarted>();
         }
-        [Test]
+        [Fact]
         public void ShouldJoinMultiCastGroup()
         {
             //arrange 
@@ -33,7 +31,7 @@ namespace Tests
             var connectionData = auction.Connection.Data;
             Client.JoinAuctionConnection(connectionData);
         }
-        [Test]
+        [Fact]
         public void ShouldGetAuctionData()
         {
             //arrange 
@@ -50,8 +48,8 @@ namespace Tests
             auction.CurrentBid.Buyer.Name.Should().Be(clientInfo?.Buyer.Name);
             auction.CurrentBid.Buyer.PublicKey.Should().Be(clientInfo?.Buyer.PublicKey);
         }
-        [Test]
-        public void ShouldUpdateBidReceivingKey()
+        [Fact]
+        public void ShouldUpdateCurrentBidReceivingKey()
         {
             //arrange 
             var auction = new Auction("TV 50 Polegadas", 999.99, 10, 5);
@@ -70,25 +68,26 @@ namespace Tests
             auction.CurrentBid.Buyer.Name.Should().Be(newBid.Buyer.Name);
             auction.CurrentBid.Buyer.PublicKey.Should().Be(newBid.Buyer.PublicKey);
         }
-        [Test]
-        public async Task ShouldUpdateBidThroughAPI()
+        [Fact]
+        public void ShouldUpdateCurrentBidOfClient2ReceivingKey()
         {
             //arrange 
-            Controller.CreateAuction("TV 50 Polegadas", 999.99, 10, 5);
-            var auction = Auction.CurrentAuction;
+            var auction = new Auction("TV 50 Polegadas", 999.99, 10, 5);
+            var client2 = new Client("José Gabas Juca Jr");
 
             //act
-            await Client.RequestJoin();
+            var connectionData = auction.Connection.Data;
+            Client.JoinAuctionConnection(connectionData);
+            client2.JoinAuctionConnection(connectionData);
 
-            //assert
             var newBid = new Bid(Client.BuyerData, 1050, false);
             Client.Send(newBid);
+            Thread.Sleep(1000);
 
-            await Task.Delay(1000);
-
-            auction?.CurrentBid.Value.Should().Be(newBid.Value);
-            auction?.CurrentBid.Buyer.Name.Should().Be(newBid.Buyer.Name);
-            auction?.CurrentBid.Buyer.PublicKey.Should().Be(newBid.Buyer.PublicKey);
+            //assert
+            client2.CurrentBid?.Value.Should().Be(newBid.Value);
+            client2.CurrentBid?.Buyer.Name.Should().Be(newBid.Buyer.Name);
+            client2.CurrentBid?.Buyer.PublicKey.Should().Be(newBid.Buyer.PublicKey);
         }
     }
 }

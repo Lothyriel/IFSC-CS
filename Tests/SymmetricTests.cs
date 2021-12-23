@@ -1,7 +1,7 @@
 using Domain.Business;
 using Domain.Criptography;
 using FluentAssertions;
-using NUnit.Framework;
+using Xunit;
 
 namespace Tests
 {
@@ -10,19 +10,19 @@ namespace Tests
         private SymmetricKey SymmetricKey { get; } = new();
         private SymmetricKey? SymmetricKeyCopy;
 
-        [SetUp]
+        [Fact]
         public void Setup()
         {
             SymmetricKeyCopy = new SymmetricKey(SymmetricKey.Aes.Key.GetToString(), SymmetricKey.Aes.IV.GetToString());
         }
-        [Test]
+        [Fact]
         public void ShouldLoadSameKey()
         {
             //assert            
             SymmetricKeyCopy?.Aes.Key.Should().Equal(SymmetricKey.Aes.Key);
             SymmetricKeyCopy?.Aes.IV.Should().Equal(SymmetricKey.Aes.IV);
         }
-        [Test]
+        [Fact]
         public void ShouldEncryptAndDecryptData()
         {
             //arrange

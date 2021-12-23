@@ -29,7 +29,6 @@ namespace Domain.Business
 
         private List<Bid> Bids { get; } = new();
         private Dictionary<string, BuyerData> Buyers { get; } = new();
-        public static Auction? CurrentAuction { get; set; } = null;
 
         public string GetConnectionData(string name, string publicKey)
         {
@@ -49,7 +48,7 @@ namespace Domain.Business
                 {
                     Console.WriteLine($"Current Bid is: {CurrentBid}");
                     Connection.Send(CurrentBid);
-                    Thread.Sleep(500);
+                    Thread.Sleep(5000);
                 }
             }
         }
@@ -62,7 +61,7 @@ namespace Domain.Business
                 while (true)
                 {
                     var bid = Connection.Receive();
-                    if (!bid.IsValid(this) && bid.IsFromServer)
+                    if (!bid.IsValid(this))
                         continue;
 
                     Bids.Add(bid);
