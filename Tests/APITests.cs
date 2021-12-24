@@ -24,7 +24,7 @@ namespace Tests
         public async Task ShouldUpdateBidThroughAPI()
         {
             //act
-            AuctionController.CurrentAuction = new Auction("descricao", 100, 10, 5);
+            AuctionController.CurrentAuction = new("descricao", 100, 10, 5);
             Client.HttpClient = HttpClient;
 
             await Client.PostJoin("/join");

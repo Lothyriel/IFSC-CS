@@ -52,27 +52,22 @@ namespace Domain
         public void JoinAuctionConnection(ConnectionData connectionData)
         {
             AuctionConnection = new(connectionData);
-            BeginReceiveLoop();
         }
 
         public void Send(Bid newBid)
         {
             AuctionConnection?.Send(newBid);
         }
-        public void BeginReceiveLoop()
+
+        public Bid Receive()
         {
-            Task.Run(ReceiveLoop);
+            Bid bid;
+            do
+                bid = AuctionConnection?.Receive() ?? throw new NotConnected();
+            while (bid.IsFromServer);
 
-            void ReceiveLoop()
-            {
-                while (true)
-                {
-                    var bid = AuctionConnection?.Receive() ?? throw new NotConnected();
-
-                    if (bid.IsFromServer)
-                        CurrentBid = bid;
-                }
-            }
+            CurrentBid = bid;
+            return bid;
         }
     }
 }
