@@ -1,6 +1,6 @@
 ﻿using Domain.Criptography;
 using FluentAssertions;
-using NUnit.Framework;
+using Xunit;
 
 namespace Tests
 {
@@ -8,7 +8,7 @@ namespace Tests
     {
         private AsymmetricKey AsymmetricKeys { get; } = new();
 
-        [Test]
+        [Fact]
         public void ShouldLoadSameKey()
         {
             //act         
@@ -19,7 +19,7 @@ namespace Tests
             publicKey.Modulus.Should().Equal(AsymmetricKeys.PublicKey.Modulus);
             publicKey.Exponent.Should().Equal(AsymmetricKeys.PublicKey.Exponent);
         }
-        [Test]
+        [Fact]
         public void ShouldEncryptAndDecryptData()
         {
             //arrange

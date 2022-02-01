@@ -1,4 +1,4 @@
-namespace Client
+namespace ClientWindowsForms
 {
     internal static class Program
     {
