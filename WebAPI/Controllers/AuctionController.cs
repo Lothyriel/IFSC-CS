@@ -1,5 +1,7 @@
 ﻿using Domain.Business;
 using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json;
+using WebAPI.ViewModels;
 
 namespace WebAPI.Controllers
 {
@@ -8,15 +10,26 @@ namespace WebAPI.Controllers
     {
         [HttpPost]
         [Route("join")]
-        public string GetConnectionData(string name, string publicKey)
+        public string GetConnectionData(ConnectionDataViewModel cd)
         {
-            return Auction.CurrentAuction?.GetConnectionData(name, publicKey) ?? "Not Started!";
+            try
+            {
+                return Auction.CurrentAuction?.GetConnectionData(cd.Name, cd.PublicKey) ?? "Auction Not Started!";
+            }
+            catch (JsonReaderException)
+            {
+                return "Invalid public key";
+            }
         }
         [HttpPost()]
         [Route("start")]
-        public void CreateAuction(string produtctDescription, double startingValue, double minBid, double minutesDueTime)
+        public string CreateAuction(AuctionStartViewModel auction)
         {
-            Auction.CurrentAuction = new Auction(produtctDescription, startingValue, minBid, minutesDueTime);
+            if (Auction.CurrentAuction != null)
+                return "Auction is already running";
+
+            new Auction(auction.ProdutctDescription, auction.StartingValue, auction.MinBid, auction.MinutesDueTime).Start();
+            return "Auction Started!";
         }
     }
 }

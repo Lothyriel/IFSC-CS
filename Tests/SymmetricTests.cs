@@ -2,6 +2,7 @@ using Domain.Business;
 using Domain.Criptography;
 using FluentAssertions;
 using NUnit.Framework;
+using System;
 
 namespace Tests
 {
@@ -27,7 +28,7 @@ namespace Tests
         {
             //arrange
             var buyer = new BuyerData("João Xavier", "");
-            var bid = new Bid(buyer, 200, false);
+            var bid = new Bid(buyer, 200, "TV", 20, DateTime.MaxValue);
 
             //act
             var encryptedBid = SymmetricKey.Encrypt(bid);

@@ -4,7 +4,6 @@ using Domain.Business.Exceptions;
 using FluentAssertions;
 using NUnit.Framework;
 using System.Threading;
-using System.Threading.Tasks;
 using WebAPI.Controllers;
 
 namespace Tests
@@ -44,6 +43,8 @@ namespace Tests
             Client.JoinAuctionConnection(connectionData);
 
             //assert
+            auction.Start();
+            Thread.Sleep(1000);
             var clientInfo = Client.AuctionConnection?.Receive();
 
             auction.CurrentBid.Value.Should().Be(clientInfo?.Value);
@@ -53,38 +54,42 @@ namespace Tests
         [Test]
         public void ShouldUpdateBidReceivingKey()
         {
+            var productDescripton = "TV 50 Inches";
             //arrange 
-            var auction = new Auction("TV 50 Polegadas", 999.99, 10, 5);
+            var auction = new Auction(productDescripton, 999.99, 10, 5);
+            auction.Start();
 
             //act
             var connectionData = auction.Connection.Data;
             Client.JoinAuctionConnection(connectionData);
 
             //assert
-            var newBid = new Bid(Client.BuyerData, 1050, false);
-            Client.Send(newBid);
+            var newBid = new Bid(Client.BuyerData, 1050, productDescripton, auction.MinBid, auction.DueTime);
+            Client.Bid(newBid);
 
-            Thread.Sleep(1000);
+            Thread.Sleep(3000);
 
             auction.CurrentBid.Value.Should().Be(newBid.Value);
             auction.CurrentBid.Buyer.Name.Should().Be(newBid.Buyer.Name);
             auction.CurrentBid.Buyer.PublicKey.Should().Be(newBid.Buyer.PublicKey);
         }
         [Test]
-        public async Task ShouldUpdateBidThroughAPI()
+        public void ShouldUpdateBidThroughAPIController()
         {
             //arrange 
-            Controller.CreateAuction("TV 50 Polegadas", 999.99, 10, 5);
-            var auction = Auction.CurrentAuction;
+            var productDescription = "TV 50 Inches";
+            var auction = new Auction(productDescription, 999.99, 10, 5);
+            auction.Start();
 
             //act
-            await Client.RequestJoin();
+            var connectionData = Controller.GetConnectionData(new (Client.BuyerData.Name, Client.BuyerData.PublicKey));
+            Client.TreatResponse(connectionData);
 
             //assert
-            var newBid = new Bid(Client.BuyerData, 1050, false);
-            Client.Send(newBid);
+            var newBid = new Bid(Client.BuyerData, 1050, productDescription, auction.MinBid, auction.DueTime);
+            Client.Bid(newBid);
 
-            await Task.Delay(1000);
+            Thread.Sleep(5000);
 
             auction?.CurrentBid.Value.Should().Be(newBid.Value);
             auction?.CurrentBid.Buyer.Name.Should().Be(newBid.Buyer.Name);

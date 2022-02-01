@@ -12,7 +12,7 @@ namespace Domain
 
         public AuctionConnection(ConnectionData data)
         {
-            UdpConnection = new UdpConnection(data.MultiCastAddress, data.Port);
+            UdpConnection = new(data.MultiCastAddress, data.Port);
             SymmetricKey = data.SymmetricKey;
             Data = data;
         }
@@ -20,7 +20,7 @@ namespace Domain
         public void Send(Bid newBid)
         {
             var encryptedBytes = SymmetricKey.Encrypt(newBid);
-            UdpConnection.Send(encryptedBytes); 
+            UdpConnection.Send(encryptedBytes);
         }
         public Bid Receive()
         {

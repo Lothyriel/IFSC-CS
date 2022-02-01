@@ -9,7 +9,7 @@ namespace Client
         static void Main()
         {
             ApplicationConfiguration.Initialize();
-            Application.Run(new MainWindow());
+            Application.Run(new MainScreen());
         }
     }
 }

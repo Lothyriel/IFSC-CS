@@ -1,5 +1,4 @@
-﻿using Domain.Business_Objects;
-using Domain.Criptography;
+﻿using Domain.Criptography;
 
 namespace Domain.Business
 {
@@ -11,11 +10,8 @@ namespace Domain.Business
             StartingValue = startingValue;
             MinBid = minBid;
             DueTime = DateTime.Now.Add(TimeSpan.FromMinutes(dueTime));
-            CurrentBid = new Bid(new BuyerData("Starting Value", "None"), StartingValue);
-            Connection = new(Data);
-
-            BeginReceivingLoop();
-            BeginBroadcast();
+            CurrentBid = new (new ("Starting Value", "None"), StartingValue, produtctDescription, minBid, DueTime, true);
+            Connection = new (Data);
         }
 
         public string ProdutctDescription { get; }
@@ -24,32 +20,33 @@ namespace Domain.Business
         public DateTime DueTime { get; }
         public Bid CurrentBid { get; set; }
         public AuctionConnection Connection { get; }
-
-        public ConnectionData Data = new("224.168.55.25", 50000, new());
+        public ConnectionData Data { get; } = new("224.168.55.25", 50000, new());
 
         private List<Bid> Bids { get; } = new();
-        private Dictionary<string, BuyerData> Buyers { get; } = new();
         public static Auction? CurrentAuction { get; set; } = null;
+
 
         public string GetConnectionData(string name, string publicKey)
         {
-            var encryptedData = AsymmetricKey.Encrypt(publicKey, Connection.Data);
-            Buyers.Add(publicKey, new BuyerData(name, publicKey));
-
-            return encryptedData;
+            return AsymmetricKey.Encrypt(publicKey, Connection.Data);
         }
-
+        public void Start()
+        {
+            CurrentAuction = this;
+            BeginReceivingLoop();
+            BeginBroadcast();
+        }
         private void BeginBroadcast()
         {
-            Task.Run(Broadcast);
+            Task.Run(BroadcastLoop);
 
-            void Broadcast()
+            void BroadcastLoop()
             {
                 while (true)
                 {
                     Console.WriteLine($"Current Bid is: {CurrentBid}");
                     Connection.Send(CurrentBid);
-                    Thread.Sleep(500);
+                    Thread.Sleep(3000);
                 }
             }
         }
@@ -62,11 +59,12 @@ namespace Domain.Business
                 while (true)
                 {
                     var bid = Connection.Receive();
-                    if (!bid.IsValid(this) && bid.IsFromServer)
+                    if (!CurrentBid.IsValid(bid.Value) || bid.IsFromServer || bid.AuctionExpired())
                         continue;
 
                     Bids.Add(bid);
                     CurrentBid = bid;
+                    CurrentBid.IsFromServer = true;
                 }
             }
         }

@@ -8,7 +8,7 @@ namespace Domain.Criptography
     {
         public AsymmetricKey()
         {
-            var rsa = new RSACryptoServiceProvider(2048);
+            var rsa = new RSACryptoServiceProvider(4096);
             PrivateKey = rsa.ExportParameters(true);
             PublicKey = rsa.ExportParameters(false);
         }

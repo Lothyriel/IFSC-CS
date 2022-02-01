@@ -1,7 +1,8 @@
 ﻿using Domain.Business;
 using Domain.Business.Exceptions;
-using Domain.Business_Objects;
 using Domain.Criptography;
+using Newtonsoft.Json;
+using System.Text;
 
 namespace Domain
 {
@@ -14,6 +15,7 @@ namespace Domain
         public AuctionConnection? AuctionConnection { get; set; } = null;
 
         private static HttpClient HttpClient { get; } = new();
+        public bool AuctionEnded { get; set; }
 
         public ClientConnection(string name)
         {
@@ -27,14 +29,15 @@ namespace Domain
                 { "name", BuyerData.Name },
                 { "publicKey",BuyerData.PublicKey  }
             };
-            var data = new FormUrlEncodedContent(values);
+
+            var data = new StringContent(JsonConvert.SerializeObject(values), Encoding.UTF8, "application/json");
             var response = await HttpClient.PostAsync("http://localhost:5009/join", data);
 
             TreatResponse(await response.Content.ReadAsStringAsync());
         }
-        private void TreatResponse(string responseData)
+        public void TreatResponse(string responseData)
         {
-            if (responseData.Contains("Auction"))
+            if (responseData.Contains("Not Started"))
                 throw new AuctionNotStarted();
 
             var connectionData = AsymmetricKey.Decrypt(responseData);
@@ -44,16 +47,24 @@ namespace Domain
         public void JoinAuctionConnection(ConnectionData connectionData)
         {
             AuctionConnection = new(connectionData);
-            BeginReceiveLoop();
         }
 
-        public void Send(Bid newBid)
+        public void Bid(Bid newBid)
         {
             AuctionConnection?.Send(newBid);
         }
-        public void BeginReceiveLoop()
+        public async Task BeginReceiveLoop(Action<Bid> handler)
         {
-            Task.Run(() => AuctionConnection?.Receive());
+            await Task.Run(ReceiveLoop);
+
+            void ReceiveLoop()
+            {
+                while (!AuctionEnded) 
+                {
+                    handler(AuctionConnection!.Receive());
+                    //Thread.Sleep(3000);
+                }
+            }
         }
     }
 }
