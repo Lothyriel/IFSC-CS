@@ -1,7 +1,6 @@
 ﻿using Domain.Business;
 using Domain.Business.Exceptions;
 using Newtonsoft.Json;
-using System.Diagnostics;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -42,8 +41,6 @@ namespace Domain.Criptography
         }
         public Bid Decrypt(byte[] encryptedBytes)
         {
-            encryptedBytes.ToList().ForEach(b => Debug.Write(b));
-
             var decryptor = Aes.CreateDecryptor(Aes.Key, Aes.IV);
 
             using var memoryStream = new MemoryStream(encryptedBytes);
