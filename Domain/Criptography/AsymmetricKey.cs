@@ -1,5 +1,4 @@
-﻿using Domain.Business.Exceptions;
-using Newtonsoft.Json;
+﻿using Newtonsoft.Json;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -42,7 +41,7 @@ namespace Domain.Criptography
             var bytes = rsa.Decrypt(encryptedBytes, false);
             var json = Encoding.Unicode.GetString(bytes);
 
-            return JsonConvert.DeserializeObject<ConnectionData>(json) ?? throw new InvalidData($"Error desserializing {json}");
+            return JsonConvert.DeserializeObject<ConnectionData>(json) ?? throw new NullReferenceException("Unable to deserialize");
         }
         public static RSAParameters DesserializePublicKey(string publicKey)
         {
