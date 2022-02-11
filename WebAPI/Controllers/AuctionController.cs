@@ -21,6 +21,7 @@ namespace WebAPI.Controllers
                 return "Invalid public key";
             }
         }
+
         [HttpPost()]
         [Route("start")]
         public string CreateAuction(AuctionStartViewModel auction)
